@@ -1,0 +1,147 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<meta http-equiv="X-UA-Compatible" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<style>
+			#heatmapArea {
+				position: relative;
+				float: left;
+				width: 800px;
+				height: 600px;
+				border: 1px dashed black;
+			}
+			
+			#configArea {
+				position: relative;
+				float: left;
+				width: 200px;
+				padding: 15px;
+				padding-top: 0;
+				padding-right: 0;
+			}
+			
+			#map {
+				width: 800px;
+				height: 600px;
+			}
+		</style>
+		<script type="text/javascript">
+			var djConfig = {
+				parseOnLoad: true
+			};
+		</script>
+		<script type="text/javascript" src="http://js.arcgis.com/3.10/"></script>
+		<link rel="stylesheet" type="text/css" href="http://182.148.109.184:6002/3.14/dijit/themes/tundra/tundra.css" />
+		<link rel="stylesheet" type="text/css" href="http://182.148.109.184:6002/3.14/esri/css/esri.css" />
+		<script type="text/javascript" src="http://182.148.109.184:6002/3.14/init.js"></script>
+
+		<script type="text/javascript" src="js/heatmap.js"></script>
+		<script type="text/javascript" src="js/heatmap-arcgis.js"></script>
+		<script type="text/javascript">
+			dojo.require("esri.map");
+			dojo.require("esri.layers.FeatureLayer");
+
+			// Variables
+			var map;
+			var heatLayer;
+			var featureLayer;
+
+			// get the features within the current extent from the feature layer
+			function getFeatures() {
+				var data = [{
+						attributes: {
+							count: 0.1
+
+						},
+						geometry: {
+							spatialReference: {
+								wkid: 4490
+							},
+							type: "point",
+							x: 104.052241,
+							y: 30.573756,
+						}
+					},
+					{
+						attributes: {
+							count: 3
+
+						},
+						geometry: {
+							spatialReference: {
+								wkid: 4490
+							},
+							type: "point",
+							x: 104.098236,
+							y: 30.600801,
+						}
+					}
+				];
+
+				heatLayer.setData(data);
+
+			}
+
+			// Init
+			function init() {
+
+				// create map
+				map = new esri.Map("map", {
+					center: [101.06, 30.67],
+					logo: false,
+					slider: false,
+					maxZoom: 17
+				});
+
+				var basemap = new esri.layers.ArcGISTiledMapServiceLayer("http://182.150.31.88:20018/arcgis/rest/services/v/MapServer");
+				map.addLayer(basemap);
+
+				dojo.connect(map, 'onLoad', function(theMap) {
+
+					dojo.connect(dijit.byId('map'), 'resize', map, map.resize);
+
+					heatLayer = new HeatmapLayer({
+						config: {
+							"useLocalMaximum": true,
+							"radius": 40,
+							"gradient": {
+								0.45: "rgb(000,000,255)",
+								0.55: "rgb(000,255,255)",
+								0.65: "rgb(000,255,000)",
+								0.95: "rgb(255,255,000)",
+								1.00: "rgb(255,000,000)"
+							}
+						},
+						"map": map,
+						"domNodeId": "heatLayer",
+						"opacity": 0.85
+					});
+					// add heat layer to map
+					map.addLayer(heatLayer);
+					// resize map
+					map.resize();
+					// create feature layer to get the points from
+
+					// get features from this layer
+					getFeatures();
+					// on map extent change
+					dojo.connect(map, "onExtentChange", getFeatures);
+					heatLayer.show();
+				});
+			}
+			// call init on load of dojo
+			dojo.addOnLoad(init);
+		</script>
+	</head>
+
+	<div id="heatmapArea">
+		<div id="heatLayer"></div>
+		<div id="map"></div>
+	</div>
+
+	</body>
+
+</html>

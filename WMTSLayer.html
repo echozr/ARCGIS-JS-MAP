@@ -1,0 +1,189 @@
+﻿<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="UTF-8">
+		<title></title>
+		<script type="text/javascript" src="js/jquery-1.11.3.js"></script>
+		<link rel="stylesheet" type="text/css" href="http://182.148.109.184:6002/3.14/dijit/themes/tundra/tundra.css" />
+		<link rel="stylesheet" type="text/css" href="http://182.148.109.184:6002/3.14/esri/css/esri.css" />
+		<script type="text/javascript" src="http://182.148.109.184:6002/3.14/init.js"></script>
+		
+		<!--<link rel="stylesheet" type="text/css" href="http://10.194.21.115/3.14/dijit/themes/tundra/tundra.css" />
+	   <link rel="stylesheet" type="text/css" href="http://10.194.21.115/3.14/esri/css/esri.css" />
+	   <script type="text/javascript" src="http://10.194.21.115/3.14/init.js"></script>-->
+
+		<script type="text/javascript" src="js/newMapLayer.js"></script>
+		<script type="text/javascript" src="js/ChengShiBianJie.js"></script>
+		<script type="text/javascript" src="js/heatmap.js"></script>
+		<script type="text/javascript" src="js/heatmap-arcgis.js"></script>
+	</head>
+
+	<body>
+		<div class="select_map_box">
+			<div class="select_map map_select_active" name="1">
+				地图</div>
+			<div class="select_map select_map_borderLast" name="2">
+				卫星</div>
+		</div>
+
+		<div id="heatLayer"></div>
+		<div class="qsm_map_div map" style=" width:100%; height:600px;" id="allmap">
+		</div>
+	</body>
+	<script>
+		var map;
+		var mapType = "1";
+		function mapload() {
+			require([
+				"esri/map",
+				"esri/layers/ArcGISTiledMapServiceLayer",
+				"esri/layers/ArcGISDynamicMapServiceLayer",
+				"esri/layers/WebTiledLayer",
+				"esri/layers/TileInfo",
+				"esri/geometry/Point",
+				"dojo/dom",
+				"dojo/on",
+				"esri/SpatialReference",
+				"esri/geometry/Extent",
+				"esri/symbols/PictureMarkerSymbol",
+				"esri/graphic",
+				"esri/layers/GraphicsLayer",
+				"esri/dijit/InfoWindow",
+				"dojo/dom-construct",
+				"esri/layers/FeatureLayer",
+				"esri/tasks/QueryTask",
+				"esri/tasks/query",
+				"esri/geometry/Polyline",
+				"esri/geometry/geodesicUtils",
+				"esri/units",
+				"esri/InfoTemplate",
+				"esri/tasks/IdentifyTask",
+				"esri/tasks/IdentifyParameters",
+				"dojo/_base/array",
+				"esri/basemaps",
+				"esri/symbols/SimpleFillSymbol",
+				"esri/symbols/SimpleLineSymbol",
+				"esri/Color",
+				"esri/geometry/Polygon",
+				"esri/layers/WMTSLayerInfo",
+				"esri/layers/WMTSLayer",
+				"dojo/domReady!"
+			], function(Map, ArcGISTiledMapServiceLayer, ArcGISDynamicMapServiceLayer, WebTiledLayer, TileInfo, Point, dom, on, SpatialReference, Extent, PictureMarkerSymbol, Graphic, GraphicsLayer, InfoWindow, domConstruct, FeatureLayer, QueryTask, Query, Polyline, geodesicUtils, Units, InfoTemplate, IdentifyTask, IdentifyParameters, arrayUtils, esriBasemaps, SimpleFillSymbol, SimpleLineSymbol, Color, Polygon, WMTSLayerInfo, WMTSLayer) {
+
+				map = new Map("allmap", {
+					center: [101.06, 30.67],
+					logo: false,
+					slider: false,
+					zoom: 5,
+					minZoom: 5,
+					maxZoom: 17
+				});
+				if(mapType == '1') {
+					/*行政区划图*/
+					TopographicMap(Extent, SpatialReference, WMTSLayerInfo, WMTSLayer, map);
+				} else if(mapType == '2') {
+					/*地形图*/
+					SatelliteImagery(Extent, SpatialReference, WMTSLayerInfo, WMTSLayer, map);
+				}
+
+				var graphicsLayerA = new GraphicsLayer(); //新建行政区域图层；
+				map.addLayer(graphicsLayerA); //设置行政区图层在地图上显示的级别
+				var qyLayer = new GraphicsLayer();
+				map.addLayer(qyLayer)
+				//addGraphics()
+				//绘制行政区域
+				function addGraphics() {
+					// 设置行政区域样式
+					var polygonSymbol = new SimpleFillSymbol(
+						SimpleFillSymbol.STYLE_SOLID,
+						new SimpleLineSymbol(
+							SimpleLineSymbol.STYLE_SOLID,
+							new Color([151, 249, 0, 1]), //边界样式
+							1),
+						new Color([151, 249, 0, 0.3])
+					);
+					//行政区域的点的集合
+					//选择要标记的地区数据
+					var triangle = new Polygon({
+						"rings": [
+							NX_data_json
+						],
+						"spatialReference": {
+							"wkid": 4326
+						}
+					});
+
+					graphicsLayerA.add(new Graphic(triangle, polygonSymbol)); //把线级区域添加到地图中
+
+				}
+
+				function getFeatures() {
+					var data = [{
+							attributes: {
+								count: 0.54
+							},
+							geometry: {
+								spatialReference: {
+									wkid: 4326
+								},
+								type: "point",
+								x: 104.052241,
+								y: 30.573756
+							}
+						},
+						{
+							attributes: {
+								count: 0
+							},
+							geometry: {
+								spatialReference: {
+									wkid: 4326
+								},
+								type: "point",
+								x: 104.198236,
+								y: 30.600801
+							}
+						},
+						{
+							attributes: {
+								count: 0.0004
+							},
+							geometry: {
+								spatialReference: {
+									wkid: 4326
+								},
+								type: "point",
+								x: 105.198236,
+								y: 30.900801
+							}
+						}
+					];
+					heatLayer.setData(data);
+				}
+				dojo.connect(dijit.byId('map'), 'resize', map, map.resize);
+				heatLayer = new HeatmapLayer({
+					config: {
+						"useLocalMaximum": true,
+						"radius": 40,
+						"gradient": {
+							0:'rgba(255,255,255,0)',
+							.33: 'rgb(139, 175, 204)',
+							.66: 'rgb(72, 148, 210)',
+							1: 'rgb(0, 137, 247)'
+						}
+					},
+					"map": map,
+					"domNodeId": "heatLayer",
+					"opacity": 0.25
+				});
+				map.addLayer(heatLayer);
+				map.resize();
+				getFeatures();
+				heatLayer.show();
+			})
+		}
+		dojo.addOnLoad(mapload);
+	</script>
+
+</html>
